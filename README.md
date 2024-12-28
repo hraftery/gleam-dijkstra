@@ -29,22 +29,24 @@ gleam add dijkstra
 import dijkstra
 
 pub fn main() {
-  let f = fn(node_id: Int) -> Dict(Int, Int) {
+  let successor_func = fn(node_id: NodeId) -> Dict(NodeId, Int) {
     case node_id {
-      0 -> dict.from_list([#(1,4), #(7,8)])
-      1 -> dict.from_list([#(0,4), #(7,11), #(2,8)])
-      7 -> dict.from_list([#(0,8), #(1,11), #(8,8),  #(6,1)])
-      2 -> dict.from_list([#(1,8), #(8,2),  #(3,7),  #(5,4)])
-      8 -> dict.from_list([#(7,7), #(2,2),  #(6,6)])
-      6 -> dict.from_list([#(7,1), #(8,6),  #(5,2)])
-      3 -> dict.from_list([#(2,7), #(5,14), #(4,9)])
-      5 -> dict.from_list([#(6,2), #(2,4),  #(3,14), #(4,10)])
-      4 -> dict.from_list([#(3,9), #(5,10)])
-      _ -> panic as "bug"
+      0 -> dict.from_list([#(1,4), #(2,3)])
+      1 -> dict.from_list([#(3,5)])
+      2 -> dict.from_list([#(3,5)])
+      3 -> dict.from_list([])
+      _ -> panic as "unreachable"
     }
   }
   
-  let shortest_paths = dijkstra.dijkstra(f, 0)
+  let shortest_paths = dijkstra.dijkstra(successor_func, 0)
+  let shortest_path_to_3 = dijkstra.shortest_path(shortest_paths, 3)
+  io.print("Shortest path to node 3 has length: ")
+  io.debug(shortest_path_to_3.1)
+  io.println(".")
+  io.print("That path is: ")
+  io.debug(shortest_path_to_3.0)
+  io.println(".")
 }
 ```
 
