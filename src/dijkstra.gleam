@@ -39,10 +39,10 @@ type AllPredecessors(node_id) = Dict(node_id, List(node_id))
 /// Run Dijkstra's algorithm to determine the shortest path to every node reachable from
 /// `start`, according to `edges_from`.
 ///
-/// ## Examples
+/// ## Example
 ///
 /// ```gleam
-/// let f = fn(node_id: NodeId) -> Dict(NodeId, Int) {
+/// let f = fn(node_id: Int) -> Dict(Int, Int) {
 ///   case node_id {
 ///     0 -> dict.from_list([#(1,4), #(2,3)])
 ///     1 -> dict.from_list([#(3,5)])

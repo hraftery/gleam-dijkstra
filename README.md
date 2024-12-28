@@ -20,10 +20,15 @@ gleam add dijkstra
 ```
 
 
-## Short Example
+## Example Usage
 
 ```gleam
+import gleam/io
+import gleam/dict.{type Dict}
+
 import dijkstra
+
+pub type NodeId = Int
 
 pub fn main() {
   let successor_func = fn(node_id: NodeId) -> Dict(NodeId, Int) {
@@ -39,26 +44,18 @@ pub fn main() {
   let shortest_paths = dijkstra.dijkstra(successor_func, 0)
   let shortest_path_to_3 = dijkstra.shortest_path(shortest_paths, 3)
   io.print("Shortest path to node 3 has length: ")
-  io.debug(shortest_path_to_3.1)
-  io.println(".")
+  io.debug(shortest_path_to_3.1) // -> 8
   io.print("That path is: ")
-  io.debug(shortest_path_to_3.0)
-  io.println(".")
+  io.debug(shortest_path_to_3.0) // -> [0, 2, 3]
 }
 ```
 
 
-## Development
-
-```sh
-gleam test  # Run the tests
-```
-
-## Usage
+## Detailed Usage
 
 The key to this library is the user specified [`SuccessorsFunc`](#SuccessorsFunc) function
-with type `fn(node_id) -> Dict(node_id, Int)`, passed as the `edges_from` parameter to the
-`dijkstra` function. Instead of relying on a graph data structure, this function provides
+with type `fn(node_id) -> Dict(node_id, Int)`, and passed as the `edges_from` parameter to
+the `dijkstra` function. Instead of relying on a graph data structure, this function provides
 node neighbours on demand.
 
 To define a suitable function, first define a type for the `node_id` type variable. For many
@@ -83,8 +80,8 @@ type NodeId = Int
 let f: SuccessorsFunc(NodeId) = fn(node: NodeId) {
   let my_graph =
     graph.new()
-    |> graph.insert_node(1, "one node")
-    |> graph.insert_node(2, "other node")
+    |> graph.insert_node(Node(1, "one node"))
+    |> graph.insert_node(Node(2, "other node"))
     |> graph.insert_directed_edge("edge label", from: 1, to: 2)
     |> ...
   
@@ -113,7 +110,7 @@ type NodeId = String
 fn make_successor_fn(snippets: List(String)) -> SuccessorsFunc(NodeId)
 {
   fn(remaining_text: NodeId) -> Dict(NodeId, Int) {
-    list.filter_map(remaining_text, fn (snippet) {
+    list.filter_map(snippets, fn (snippet) {
       case string.starts_with(remaining_text, snippet) {
         False -> Error(Nil)
         True  -> Ok(#(string.drop_start(remaining_text, string.length(snippet)), 1))
@@ -127,8 +124,8 @@ fn make_successor_fn(snippets: List(String)) -> SuccessorsFunc(NodeId)
 Then you simply pass your data store to the generator to get your function:
 
 ```gleam
-let can_be_done = make_graph_fn(my_snippets)
-|> dijkstra.dijkstra(my_paragrah)
+let can_be_done = make_successor_fn(my_snippets)
+|> dijkstra.dijkstra(my_paragraph)
 |> dijkstra.has_path_to("")
 ```
 
@@ -176,7 +173,7 @@ fn make_successor_fn(m: Matrix) -> SuccessorsFunc(NodeId)
     let #(coord, old_dir) = n
     [N, E, S, W]
     |> list.filter(fn(new_dir) { new_dir != opposite(old_dir) }) //can't go backwards
-    |> list.map(fn(new_dir) { #(get_neighbours(m, coord), new_dir) })
+    |> list.map(fn(new_dir) { #(get_neighbour(m, coord, new_dir), new_dir) })
     |> list.map(fn(coord_dir) {
       #(coord_dir, case coord_dir.1 == old_dir { True -> 1  False -> 10 })
     })
@@ -193,6 +190,13 @@ a graph. In my experience, the most difficult part of applying Dijkstra from a l
 often working out how to transform your problem domain to the graph representation expected
 of the library. Eliminating that dependency might mean more time exploring the problem
 domain and less time learning a new graph abstraction.
+
+
+## Development
+
+```sh
+gleam test  # Run the tests
+```
 
 
 ## Acknowledgements
