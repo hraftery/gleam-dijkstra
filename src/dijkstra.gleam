@@ -1,27 +1,27 @@
 ////
-//// The key to this library is the user specified [`SuccessorNodes`](#SuccessorNodes) function,
-//// called `edges_from` and with type `fn(node_id) -> Dict(node_id, Int)`.
+//// The key to this library is the user specified [`SuccessorsFunc`](#SuccessorsFunc) function,
+//// passed as the `edges_from` parameter, with type `fn(node_id) -> Dict(node_id, Int)`.
 //// 
 //// To define a suitable function, first define a type for the `node_id` type variable. For many
 //// graphs a simple `Int` or `String` will suffice to identify each node. But you are free to
 //// include context in the type, such as direction or a counter, by specifying a tuple or record.
 //// You can then use this context to determine the successor nodes.
 //// 
-//// The [`SuccessorNodes`](#SuccessorNodes) function takes a `node_id` of the type you define,
-//// and returns a `Dict` of successor nodes and their distances. In traditional graph theory,
-//// these are called *edges*. For example, a simple undirected graph could be represented with
-//// a `node_id` of `Int` and a return value consisting of all the adjacent nodes and their
-//// distances. But you could just as well represent a game of tic-tac-toe, where each `node_id`
-//// is the current game state and each successor is a possible next move.
+//// `SuccessorsFunc` takes a `node_id` of the type you define, and returns a `Dict` of successor
+//// nodes and their distances. In traditional graph theory, these are called *edges*. For
+//// example, a simple undirected graph could be represented with a `node_id` of `Int` and a
+//// return value consisting of all the adjacent nodes and their distances. But you could just
+//// as well represent a game of tic-tac-toe, where each `node_id` is the current game state and
+//// each successor is a possible next move.
 //// 
-//// If you already have a graph type, it's likely you need only map the `SuccessorNodes`
-//// function to that graph type's function for listing outgoing nodes. For example, if you're
-//// using the [`graph`](https://hex.pm/packages/graph) package, then your `SuccessorNodes`
-//// function might look like this:
+//// If you already have a graph type, it's likely you need only map `SuccessorsFunc` to that
+//// graph type's function for listing outgoing nodes. For example, if you're using the
+//// [`graph`](https://hex.pm/packages/graph) package, then your `SuccessorsFunc` might look
+//// like this:
 //// 
 //// ```gleam
 //// type NodeId = Int
-//// let f: SuccessorNodes(NodeId) = fn(node: NodeId) {
+//// let f: SuccessorsFunc(NodeId) = fn(node: NodeId) {
 ////   let my_graph =
 ////     graph.new()
 ////     |> graph.insert_node(1, "one node")
@@ -39,18 +39,18 @@
 //// For graphs without edge weights, it is perfectly valid to use the same distance value for
 //// every successor.
 
-//// Typically however, you don't want to create the graph inside your `SuccessorNodes` function.
+//// Typically however, you don't want to create the graph inside your `SuccessorsFunc` function.
 //// So note that the function can capture immutable data and just use it to determine the
 //// successors. For example you could have a function that accepts a custom data store, that
-//// creates your `SuccessorNodes` function by capturing that store and querying it based on the
+//// creates your `SuccessorsFunc` function by capturing that store and querying it based on the
 //// node provided. Suppose you were trying to make a certain paragraph from a list of sentence
 //// fragments. You could define the node as the paragraph left to construct, capture the list
-//// of sentence fragments in your `SuccessorNodes` function, and check if any of them can help
-//// complete your paragraph. It might look something like this:
+//// of sentence fragments in your `SuccessorsFunc`, and check if any of them can help complete
+//// your paragraph. It might look something like this:
 //// 
 //// ```gleam
 //// type NodeId = String
-//// fn make_successor_fn(snippets: List(String)) -> SuccessorNodes(NodeId)
+//// fn make_successor_fn(snippets: List(String)) -> SuccessorsFunc(NodeId)
 //// {
 ////   fn(remaining_text: NodeId) -> Dict(NodeId, Int) {
 ////     list.filter_map(remaining_text, fn (snippet) {
@@ -75,13 +75,13 @@
 //// a maze represented as a matrix of integer coordinates, but you want the ability to walk
 //// through walls once on your way to the exit, you could define your `node_id` as
 //// `#(#(Int, Int), Int)`. The inner pair is the current coordinates, and the last `Int`
-//// is `1` if you have a wall-walk left or `0` if you've used it up. Your `SuccessorNodes`
-//// function generator might then look something like this:
+//// is `1` if you have a wall-walk left or `0` if you've used it up. Your `SuccessorsFunc`
+//// generator might then look something like this:
 //// 
 //// ```gleam
 //// type Coord = #(Int, Int)
 //// type NodeId = #(Coord, Int)
-//// fn make_successor_fn(m: Matrix) -> SuccessorNodes(NodeId)
+//// fn make_successor_fn(m: Matrix) -> SuccessorsFunc(NodeId)
 //// {
 ////   fn(n: NodeId) -> Dict(NodeId, Int) {
 ////     let #(coord, cheats_left) = n
@@ -100,15 +100,15 @@
 ////   }
 //// }
 ////
-//// Finally, instead of deciding next moves based on the current state, your `SuccessorNodes`
-//// function could determine a distance based on the current state. Say for example you're
-//// modelling a powerboat that is fastest in a straight line. Your `node_id` could include
-//// the direction from which the current node was reached. Then your `SuccessorNodes` function
-//// could use that to prevent turning around on the spot, and to set the edge distance based on
-//// whether the direction is changing or not. Something like this:
+//// Finally, instead of deciding next moves based on the current state, your `SuccessorsFunc`
+//// could determine a distance based on the current state. Say for example you're modelling
+//// a powerboat that is fastest in a straight line. Your `node_id` could include the direction
+//// from which the current node was reached. Then your `SuccessorsFunc` could use that to
+//// prevent turning around on the spot, and to set the edge distance based on whether the
+//// direction is changing or not. Something like this:
 //// 
 //// type NodeId = #(Coord, Direction)
-//// fn make_successor_fn(m: Matrix) -> SuccessorNodes(NodeId)
+//// fn make_successor_fn(m: Matrix) -> SuccessorsFunc(NodeId)
 //// {
 ////   fn(n: NodeId) -> Dict(NodeId, Int) {
 ////     let #(coord, old_dir) = n
@@ -123,7 +123,7 @@
 //// }
 //// 
 //// So you can see that decoupling this library from a particular graph implementation makes
-//// it applicable to a wide variety of problems. By designing a suitable `SuccessorNodes`
+//// it applicable to a wide variety of problems. By designing a suitable `SuccessorsFunc`
 //// function, and taking advantage of function captures and the variable `node_id` type, you
 //// can apply Dijkstra's algorithm to scenarios that would otherwise be difficult to model as
 //// a graph. In my experience, the most difficult part of applying Dijkstra from a library is
@@ -140,7 +140,7 @@ import gleamy/priority_queue.{type Queue} as pq
 
 /// A function that given a node, returns successor nodes and their distances.
 ///
-pub type SuccessorNodes(node_id) = fn(node_id) -> Dict(node_id, Int)
+pub type SuccessorsFunc(node_id) = fn(node_id) -> Dict(node_id, Int)
 
 /// The return type of [`dijkstra`](#dijkstra). Consists of two dictionaries that contain,
 /// for every visited node, the shortest distance to that node and the node's immediate
@@ -189,7 +189,7 @@ type AllPredecessors(node_id) = Dict(node_id, List(node_id))
 /// // -> ShortestPaths(dict.from_list([#(0, 0), #(1, 4), #(2, 3), #(3, 8)]), dict.from_list([#(1, 0), #(2, 0), #(3, 2)]))
 /// ```
 ///
-pub fn dijkstra(edges_from: SuccessorNodes(node_id),
+pub fn dijkstra(edges_from: SuccessorsFunc(node_id),
                 start: node_id) -> ShortestPaths(node_id)
 {
   let dist = dict.from_list([#(start, 0)])
@@ -198,7 +198,7 @@ pub fn dijkstra(edges_from: SuccessorNodes(node_id),
   do_dijkstra(edges_from, dist, dict.new(), q)
 }
 
-fn do_dijkstra(edges_from: SuccessorNodes(node_id),
+fn do_dijkstra(edges_from: SuccessorsFunc(node_id),
                dist: Distances(node_id), pred: Predecessors(node_id),
                q: Queue(#(node_id, Int))) -> ShortestPaths(node_id)
 {
@@ -256,7 +256,7 @@ fn do_shortest_path(predecessors, curr) -> List(node_id)
 /// single node. If there are multiple shortest paths, junction nodes will have more than one
 /// predecessor.
 /// 
-pub fn dijkstra_all(edges_from: SuccessorNodes(node_id),
+pub fn dijkstra_all(edges_from: SuccessorsFunc(node_id),
                     start: node_id) -> AllShortestPaths(node_id)
 {
   let dist = dict.from_list([#(start, 0)])
@@ -265,7 +265,7 @@ pub fn dijkstra_all(edges_from: SuccessorNodes(node_id),
   do_dijkstra_all(edges_from, dist, dict.new(), q)
 }
 
-fn do_dijkstra_all(edges_from: SuccessorNodes(node_id),
+fn do_dijkstra_all(edges_from: SuccessorsFunc(node_id),
                    dist: Distances(node_id), pred: AllPredecessors(node_id),
                    q: Queue(#(node_id, Int))) -> AllShortestPaths(node_id)
 {
